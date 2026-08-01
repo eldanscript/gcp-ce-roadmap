@@ -164,12 +164,25 @@
     });
   }
 
+  function renderHomeTab(container) {
+    const roadmapSummary = RoadmapLogic.progressSummary(roadmapItems, roadmapChecked);
+    const capabilitySummary = RoadmapLogic.progressSummary(capabilityItems, capabilityChecked);
+    const week = RoadmapLogic.currentWeekNumber(new Date(), new Date('2026-08-04T00:00:00'));
+    container.innerHTML = `
+      <p>현재 ${week}주차 (2026-08-04 시작)</p>
+      <div class="item-row"><label>로드맵 진척률</label><span>${roadmapSummary.done}/${roadmapSummary.total} (${roadmapSummary.percent}%)</span></div>
+      <div class="item-row"><label>역량 체크 진척률</label><span>${capabilitySummary.done}/${capabilitySummary.total} (${capabilitySummary.percent}%)</span></div>
+    `;
+  }
+
   function renderTab(tabName) {
     const view = document.getElementById('view');
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
       a.classList.toggle('active', a.dataset.tab === tabName);
     });
-    if (tabName === 'roadmap') {
+    if (tabName === 'home') {
+      renderHomeTab(view);
+    } else if (tabName === 'roadmap') {
       view.innerHTML = '<div id="roadmap-section"></div><h2>역량 체크</h2><div id="capabilities-section"></div>';
       renderRoadmapTab(document.getElementById('roadmap-section'), roadmapItems, roadmapChecked);
       renderCapabilitiesTab(document.getElementById('capabilities-section'), capabilityItems, capabilityChecked);
@@ -205,5 +218,5 @@
     }
   })();
 
-  window.App = { renderRoadmapTab, renderCapabilitiesTab, escapeHtml };
+  window.App = { renderRoadmapTab, renderCapabilitiesTab, renderHomeTab, escapeHtml };
 })();
