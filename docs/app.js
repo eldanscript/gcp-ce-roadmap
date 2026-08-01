@@ -23,6 +23,10 @@
   }
 
   function renderRoadmapTab(container, items, checkedIds) {
+    // Capture existing open/closed states before rebuilding
+    const existingPhases = container.querySelectorAll('.phase-group');
+    const phaseOpenStates = Array.from(existingPhases).map(details => details.open);
+
     const phases = [
       { phase: 1, label: '1-4주: 기반 구축' },
       { phase: 2, label: '5-8주: 설계와 자동화 확장' },
@@ -43,6 +47,18 @@
         </details>`;
     }).join('');
     container.innerHTML = html;
+
+    // Apply previously-captured open states to newly-created elements
+    const newPhases = container.querySelectorAll('.phase-group');
+    newPhases.forEach((details, index) => {
+      if (index < phaseOpenStates.length) {
+        details.open = phaseOpenStates[index];
+      } else {
+        // First render: default to open if no previous state exists
+        details.open = true;
+      }
+    });
+
     container.querySelectorAll('[data-roadmap-id]').forEach((el) => {
       el.addEventListener('change', (e) => {
         const id = e.target.dataset.roadmapId;
