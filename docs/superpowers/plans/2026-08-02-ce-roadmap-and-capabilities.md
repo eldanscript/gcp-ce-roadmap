@@ -119,7 +119,7 @@ localStorage 즉시 반영 + Supabase 큐잉 전송으로 오프라인 대응(ro
   {"id": "c7-4", "categoryId": 7, "categoryTitle": "멀티모달 LLM 역량", "subgroup": null, "title": "Image + text grounding"},
   {"id": "c7-5", "categoryId": 7, "categoryTitle": "멀티모달 LLM 역량", "subgroup": null, "title": "Video understanding, scene segmentation, metadata extraction"},
   {"id": "c7-6", "categoryId": 7, "categoryTitle": "멀티모달 LLM 역량", "subgroup": null, "title": "Speech-to-text, text-to-speech, multilingual media workflows"},
-  {"id": "c7-7", "categoryId": 7, "categoryTitle": "멀티모달 LLM 역량", "subgroup": null, "title": "멀티모달 입력을 활용한 고객 제안서·데모 개선"},
+  {"id": "c7-7", "categoryId": 7, "categoryTitle": "멀티모달 LLM 역량", "subgroup": null, "title": "멀티모달 입력을 활용한 고객 제안서, 데모 개선"},
 
   {"id": "c8-1", "categoryId": 8, "categoryTitle": "고객 문제 정의와 아키텍처 설계", "subgroup": null, "title": "KPI 중심 discovery"},
   {"id": "c8-2", "categoryId": 8, "categoryTitle": "고객 문제 정의와 아키텍처 설계", "subgroup": null, "title": "ML이 정말 필요한 문제인지 판단"},
