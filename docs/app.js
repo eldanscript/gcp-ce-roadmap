@@ -16,6 +16,9 @@
       supabaseClient.from('roadmap_progress').select('item_id'),
       supabaseClient.from('capability_progress').select('item_id'),
     ]);
+    if (roadmapRows.error || capabilityRows.error) {
+      throw roadmapRows.error || capabilityRows.error;
+    }
     roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
     capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
   }
