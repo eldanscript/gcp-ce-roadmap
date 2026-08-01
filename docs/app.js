@@ -1,8 +1,44 @@
 (function () {
   let roadmapItems = [];
   let capabilityItems = [];
-  let roadmapChecked = new Set();   // Task 7에서 Supabase로 교체
+  let roadmapChecked = new Set();
   let capabilityChecked = new Set();
+
+  const supabaseClient = window.supabase.createClient(
+    window.ROUTINE_CONFIG.supabaseUrl,
+    window.ROUTINE_CONFIG.publishableKey
+  );
+  const roadmapQueue = new SupabaseQueue.Queue();
+  const capabilityQueue = new SupabaseQueue.Queue();
+
+  async function loadProgress() {
+    const [roadmapRows, capabilityRows] = await Promise.all([
+      supabaseClient.from('roadmap_progress').select('item_id'),
+      supabaseClient.from('capability_progress').select('item_id'),
+    ]);
+    roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
+    capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
+  }
+
+  async function sendRoadmapCheck(op) {
+    if (op.checked) {
+      const { error } = await supabaseClient.from('roadmap_progress').upsert({ item_id: op.itemId });
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('roadmap_progress').delete().eq('item_id', op.itemId);
+      if (error) throw error;
+    }
+  }
+
+  async function sendCapabilityCheck(op) {
+    if (op.checked) {
+      const { error } = await supabaseClient.from('capability_progress').upsert({ item_id: op.itemId });
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('capability_progress').delete().eq('item_id', op.itemId);
+      if (error) throw error;
+    }
+  }
 
   async function loadStaticData() {
     const [roadmapRes, capabilitiesRes] = await Promise.all([
@@ -62,7 +98,11 @@
     container.querySelectorAll('[data-roadmap-id]').forEach((el) => {
       el.addEventListener('change', (e) => {
         const id = e.target.dataset.roadmapId;
-        if (e.target.checked) roadmapChecked.add(id); else roadmapChecked.delete(id);
+        const checked = e.target.checked;
+        if (checked) roadmapChecked.add(id); else roadmapChecked.delete(id);
+        localStorage.setItem('gcp-ce-roadmap:roadmapChecked', JSON.stringify([...roadmapChecked]));
+        roadmapQueue.enqueue({ table: 'roadmap_progress', itemId: id, checked });
+        roadmapQueue.flush(sendRoadmapCheck);
         renderRoadmapTab(container, roadmapItems, roadmapChecked);
       });
     });
@@ -111,7 +151,11 @@
     container.querySelectorAll('[data-capability-id]').forEach((el) => {
       el.addEventListener('change', (e) => {
         const id = e.target.dataset.capabilityId;
-        if (e.target.checked) capabilityChecked.add(id); else capabilityChecked.delete(id);
+        const checked = e.target.checked;
+        if (checked) capabilityChecked.add(id); else capabilityChecked.delete(id);
+        localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
+        capabilityQueue.enqueue({ table: 'capability_progress', itemId: id, checked });
+        capabilityQueue.flush(sendCapabilityCheck);
         renderCapabilitiesTab(container, capabilityItems, capabilityChecked);
       });
     });
@@ -143,7 +187,19 @@
 
   (async function init() {
     await loadStaticData();
+    try {
+      roadmapChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:roadmapChecked') || '[]'));
+      capabilityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:capabilityChecked') || '[]'));
+    } catch (e) { /* localStorage 비어있거나 손상 — 빈 Set으로 시작 */ }
     renderTab(currentTabFromHash());
+    try {
+      await loadProgress();
+      localStorage.setItem('gcp-ce-roadmap:roadmapChecked', JSON.stringify([...roadmapChecked]));
+      localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
+      renderTab(currentTabFromHash());
+    } catch (e) {
+      console.warn('Supabase 로드 실패 — localStorage 상태로 계속', e);
+    }
   })();
 
   window.App = { renderRoadmapTab, renderCapabilitiesTab, escapeHtml };
