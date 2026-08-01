@@ -1,0 +1,4 @@
+window.ROUTINE_CONFIG = {
+  supabaseUrl: "https://<project-ref>.supabase.co",
+  publishableKey: "<anon-public-key>",
+};
