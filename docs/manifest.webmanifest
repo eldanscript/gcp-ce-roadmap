@@ -1,0 +1,9 @@
+{
+  "name": "GCP CE 역량 로드맵",
+  "short_name": "CE 로드맵",
+  "description": "GCP AI Customer Engineer 12주 역량 로드맵 진척률 트래커",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFF9F1",
+  "theme_color": "#DDF3E8"
+}

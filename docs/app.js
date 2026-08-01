@@ -3,6 +3,7 @@
   let capabilityItems = [];
   let roadmapChecked = new Set();
   let capabilityChecked = new Set();
+  const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
     window.ROUTINE_CONFIG.supabaseUrl,
@@ -167,7 +168,7 @@
   function renderHomeTab(container) {
     const roadmapSummary = RoadmapLogic.progressSummary(roadmapItems, roadmapChecked);
     const capabilitySummary = RoadmapLogic.progressSummary(capabilityItems, capabilityChecked);
-    const week = RoadmapLogic.currentWeekNumber(new Date(), new Date('2026-08-04T00:00:00'));
+    const week = RoadmapLogic.currentWeekNumber(new Date(), PROGRAM_START);
     container.innerHTML = `
       <p>현재 ${week}주차 (2026-08-04 시작)</p>
       <div class="item-row"><label>로드맵 진척률</label><span>${roadmapSummary.done}/${roadmapSummary.total} (${roadmapSummary.percent}%)</span></div>

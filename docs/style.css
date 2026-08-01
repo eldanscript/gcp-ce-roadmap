@@ -31,5 +31,13 @@ body {
   padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between;
 }
 .progress-badge { font-weight: normal; color: #666; font-size: 13px; }
+.subgroup-title {
+  margin: 8px 12px 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .item-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--border); }
 .item-row label { flex: 1; }

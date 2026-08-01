@@ -23,6 +23,7 @@
             await sendFn(op);
             this._ops.shift();
           } catch (err) {
+            console.warn('SupabaseQueue: op failed, will retry on next flush', err);
             break; // 네트워크 실패 — 순서 보존을 위해 여기서 멈추고 다음 flush 시도를 기다림
           }
         }
