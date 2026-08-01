@@ -878,6 +878,12 @@ Expected: `# pass 4`, `# fail 0`
       supabaseClient.from('roadmap_progress').select('item_id'),
       supabaseClient.from('capability_progress').select('item_id'),
     ]);
+    // supabase-js v2 never throws on query failure — it resolves {data:null, error}.
+    // Must check .error and throw explicitly, or a failed read silently empties
+    // state and clobbers the localStorage-restored offline state on re-render.
+    if (roadmapRows.error || capabilityRows.error) {
+      throw roadmapRows.error || capabilityRows.error;
+    }
     roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
     capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
   }
