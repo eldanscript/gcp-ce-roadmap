@@ -68,13 +68,64 @@
     });
   }
 
+  function renderCapabilitiesTab(container, items, checkedIds) {
+    // Capture existing open/closed states before rebuilding
+    const existingCategories = container.querySelectorAll('.category-group');
+    const categoryOpenStates = Array.from(existingCategories).map(details => details.open);
+
+    const categoryIds = [...new Set(items.map((i) => i.categoryId))].sort((a, b) => a - b);
+    const html = categoryIds.map((categoryId) => {
+      const categoryItems = items.filter((i) => i.categoryId === categoryId);
+      const categoryTitle = categoryItems[0].categoryTitle;
+      const summary = RoadmapLogic.progressSummary(categoryItems, checkedIds);
+      const subgroups = [...new Set(categoryItems.map((i) => i.subgroup))];
+      const body = subgroups.map((subgroup) => {
+        const groupItems = categoryItems.filter((i) => i.subgroup === subgroup);
+        const rows = groupItems.map((item) => `
+          <div class="item-row">
+            <input type="checkbox" id="cap-${item.id}" data-capability-id="${item.id}" ${checkedIds.has(item.id) ? 'checked' : ''}>
+            <label for="cap-${item.id}">${escapeHtml(item.title)}</label>
+          </div>`).join('');
+        const heading = subgroup ? `<p class="subgroup-title">${escapeHtml(subgroup)}</p>` : '';
+        return heading + rows;
+      }).join('');
+      return `
+        <details class="category-group">
+          <summary>${escapeHtml(categoryTitle)} <span class="progress-badge">${summary.done}/${summary.total}</span></summary>
+          ${body}
+        </details>`;
+    }).join('');
+    container.innerHTML = html;
+
+    // Apply previously-captured open states to newly-created elements
+    const newCategories = container.querySelectorAll('.category-group');
+    newCategories.forEach((details, index) => {
+      if (index < categoryOpenStates.length) {
+        details.open = categoryOpenStates[index];
+      } else {
+        // First render: default to closed if no previous state exists
+        details.open = false;
+      }
+    });
+
+    container.querySelectorAll('[data-capability-id]').forEach((el) => {
+      el.addEventListener('change', (e) => {
+        const id = e.target.dataset.capabilityId;
+        if (e.target.checked) capabilityChecked.add(id); else capabilityChecked.delete(id);
+        renderCapabilitiesTab(container, capabilityItems, capabilityChecked);
+      });
+    });
+  }
+
   function renderTab(tabName) {
     const view = document.getElementById('view');
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
       a.classList.toggle('active', a.dataset.tab === tabName);
     });
     if (tabName === 'roadmap') {
-      renderRoadmapTab(view, roadmapItems, roadmapChecked);
+      view.innerHTML = '<div id="roadmap-section"></div><h2>역량 체크</h2><div id="capabilities-section"></div>';
+      renderRoadmapTab(document.getElementById('roadmap-section'), roadmapItems, roadmapChecked);
+      renderCapabilitiesTab(document.getElementById('capabilities-section'), capabilityItems, capabilityChecked);
     } else {
       view.innerHTML = `<p>"${escapeHtml(tabName)}" 탭은 다음 계획에서 구현됩니다.</p>`;
     }
@@ -95,5 +146,5 @@
     renderTab(currentTabFromHash());
   })();
 
-  window.App = { renderRoadmapTab, escapeHtml };
+  window.App = { renderRoadmapTab, renderCapabilitiesTab, escapeHtml };
 })();
