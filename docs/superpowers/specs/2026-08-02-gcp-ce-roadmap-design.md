@@ -19,8 +19,13 @@ rainny가 업로드한 "GCP AI Customer Engineer Capability Roadmap" PDF(13페�
    로드맵/역량/Biz English 레이어에는 여전히 적용된다.
 8. 카테고리 11(Automate yourself) 범위: PDF의 "핵심 학습 범위" 6개 + "상세 가이드" 27개를
    전부 포함해 세분화(다른 카테고리보다 항목이 많은 것은 의도된 비대칭).
-9. **운동 루틴 추가**: jammy-routine 전체(운동+약+기타)를 그대로 이식. jammy와 달리
-   **무기한 반복**(12주 프로그램과 무관, routine-jammy와 동일하게 요일 기준으로 매주 순환).
+9. **운동 루틴 추가**: jammy-routine의 구조(운동+약+기타, **무기한 반복**, 12주 프로그램과
+   무관)만 이식하고, 운동 종목 자체는 rainny 전용으로 교체(아래 15번 참고).
+15. 운동 기본 항목(7종, 전부 고정 표시·opt-in 구분 없음): 슬로우 조깅(km 기록 유지) /
+    러닝 머신 / 실내 사이클링 / 근력 강화 / 허리 강화 스트레칭 / 스쿼트 / 푸쉬업.
+    jammy의 원래 목록(슬로우조깅·스쿼트·데드리프트·런지·플랭크 고정 + 캐틀벨스윙 등 6종
+    opt-in)은 쓰지 않는다 — "고정 5+opt-in 6" 구조 자체를 버리고 7개를 전부 기본
+    표시한다. km 메트릭 입력은 슬로우 조깅에만 유지(나머지 6개는 단순 체크).
 10. 약 목록: jammy와 동일한 4종(고지혈증약/코큐텐/비타민C·D/마그네슘) 그대로 사용.
 11. 기타 섹션: 간식/식사 텍스트 기록 + **영양분석 포함**.
 12. 영양분석: routine-jammy의 `nutrition_lookup.py`(식약처 공공 데이터베이스 API) 방식을
@@ -58,12 +63,12 @@ rainny가 업로드한 "GCP AI Customer Engineer Capability Roadmap" PDF(13페�
 - `docs/data/weeklyRoutine.json` — `{day("월"~"일"), theme}` × 7 (CE 로드맵용, 12주 한정)
 - `docs/data/maturity.json` — `{id, group, question}` × 13
   (group ∈ {"플랫폼","AI/Agent","Multimodal","Production","Automate yourself"})
-- `docs/data/routineCatalog.json` — jammy-routine 이식, **무기한 반복**용. `{id, section
-  (exercise|medication|other), title, metric?({key,unit,min,max}, "슬로우 조깅"만),
-  ruleType(fixed|suggestion)}`. exercise 5(고정: 슬로우조깅·스쿼트·데드리프트·런지·플랭크)
-  + suggestion 6(캐틀벨스윙·푸시업·버피·마운틴클라이머·글루트브릿지·크런치) + medication
-  4(고지혈증약·코큐텐·비타민C/D·마그네슘). 커스텀 추가는 앱에서 localStorage(routine-jammy
-  와 동일 패턴).
+- `docs/data/routineCatalog.json` — jammy-routine **구조**(무기한 반복) 이식, 종목은 rainny
+  전용. `{id, section(exercise|medication|other), title, metric?({key,unit,min,max},
+  "슬로우 조깅"만)}`. exercise 7(전부 고정 표시, opt-in 구분 없음: 슬로우 조깅·러닝머신·
+  실내 사이클링·근력 강화·허리 강화 스트레칭·스쿼트·푸쉬업) + medication 4(고지혈증약·
+  코큐텐·비타민C/D·마그네슘) = 11. 커스텀 추가는 앱에서 localStorage(routine-jammy와
+  동일 패턴)로 계속 지원.
 - `docs/data/bizEnglish.json` — `{weekNumber(1-12), theme, days:[{day(월~금),
   activityType, id}]}` × 12주 (5요일 고정 템플릿) — 아래 "전체 콘텐츠" 절이 원본, 60개
   리프 항목.
@@ -111,7 +116,7 @@ function currentWeekNumber(today = new Date()) {
 | 탭 | 내용 |
 |---|---|
 | 홈 | 6개 레이어 진척률 요약(로드맵 x/18, 역량 x/97, Biz English x/60, 성숙도 최근 체크포인트, 운동 루틴 이번주 이행률, 최근 영양 리포트 한 줄) |
-| **오늘** | 오늘 해당하는 모든 체크를 한 화면에 — 운동 루틴(매일, 요일 무관 고정 5종+opt-in 6종), 약 4종, 간식/식사 기록, Biz English 오늘 요일 항목(평일만), CE 주간루틴 오늘 항목. 매일 쓰는 핵심 탭 |
+| **오늘** | 오늘 해당하는 모든 체크를 한 화면에 — 운동 루틴(매일, 고정 7종 전부 표시), 약 4종, 간식/식사 기록, Biz English 오늘 요일 항목(평일만), CE 주간루틴 오늘 항목. 매일 쓰는 핵심 탭 |
 | 로드맵&역량 | CE 12주 로드맵(18, 3단계 아코디언) + 역량체크(97, 11개 카테고리 아코디언, 카테고리11은 6개 소그룹) |
 | 리포트 | 성숙도 체크리스트(13문항, 체크포인트 1=4주차/2=8주차/3=12주차), 주간 영양 리포트(nutrition_stats 테이블 조회), 전체 "아직 안 한 것" 통합 목록(로드맵+역량+Biz English 미완료 항목) |
 
@@ -127,7 +132,7 @@ routine-jammy에서 검증된 패턴 재사용: localStorage 즉시 반영 + Sup
 - 정적 JSON 일관성 테스트: 6개 JSON 파일의 id 중복 없음, `capabilities.json`의 categoryId가
   1~11 범위, `roadmap.json`의 phase가 1~3 범위, `bizEnglish.json`의 weekNumber가 1~12·
   요일이 월~금 5개 고정, 각 파일의 항목 수가 이 문서에 명시된 개수(로드맵18/역량97/CE
-  주간루틴7/성숙도13/Biz English 60/운동카탈로그15)와 정확히 일치.
+  주간루틴7/성숙도13/Biz English 60/운동카탈로그11)와 정확히 일치.
 - `nutrition_lookup.py`: routine-jammy의 `test_nutrition_lookup.py`를 그대로 이식해 재사용
   (같은 API, 같은 계약이므로 테스트도 동일하게 유효).
 
@@ -276,13 +281,11 @@ Agentic AI 또는 RAG 실습 / 목요일: Multimodal LLM 실습과 문서화 / �
 개인 지식베이스와 일정 관리가 AI 기반으로 연결되어 있는가 / 반복 학습 루틴이 템플릿과
 agent로 재사용 가능하게 구성되어 있는가
 
-### 운동 루틴 카탈로그 (routine-jammy 이식, 15개, 무기한 반복)
+### 운동 루틴 카탈로그 (jammy-routine 구조 이식·종목은 rainny 전용, 11개, 무기한 반복)
 
-**운동 — 고정 5종** (매일 카드에 항상 표시): 슬로우 조깅(km 기록, `metric{key:"km",
-unit:"km", min:0.1, max:99}`) / 스쿼트 / 데드리프트 / 런지 / 플랭크
-
-**운동 — 추천 칩 6종** ("내 항목 추가"에서 opt-in): 캐틀벨 스윙 / 푸시업 / 버피 / 마운틴
-클라이머 / 글루트 브릿지 / 크런치
+**운동 — 7종** (opt-in 구분 없이 매일 카드에 전부 표시): 슬로우 조깅(km 기록, `metric{
+key:"km", unit:"km", min:0.1, max:99}`) / 러닝 머신 / 실내 사이클링 / 근력 강화 / 허리
+강화 스트레칭 / 스쿼트 / 푸쉬업 (km 메트릭은 슬로우 조깅에만 있고 나머지 6개는 단순 체크)
 
 **약/영양제 — 고정 4종**: 고지혈증약 / 코큐텐 / 비타민C/D / 마그네슘
 

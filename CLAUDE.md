@@ -45,7 +45,7 @@ gcp-ce-roadmap/
 │   │   ├── capabilities.json          # 11개 카테고리 × 97개 학습 항목
 │   │   ├── weeklyRoutine.json         # CE 주간 반복 루틴 7개 (12주 한정)
 │   │   ├── maturity.json              # 5개 그룹 × 13개 성숙도 질문
-│   │   ├── routineCatalog.json        # 운동+약 15개 (무기한 반복, jammy-routine 이식)
+│   │   ├── routineCatalog.json        # 운동7+약4=11개 (무기한 반복, jammy-routine 구조 이식)
 │   │   └── bizEnglish.json            # 12주 × 5요일 = 60개 (무~금 세부 학습)
 │   ├── superpowers/specs/             # 브레인스토밍 spec 문서 (설계 근거)
 │   ├── app.js
