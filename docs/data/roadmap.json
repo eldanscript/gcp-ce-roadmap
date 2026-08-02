@@ -1,0 +1,20 @@
+[
+  {"id": "r1", "phase": 1, "weekRange": "1-4", "title": "GCP 핵심 서비스 맵 작성"},
+  {"id": "r2", "phase": 1, "weekRange": "1-4", "title": "Gemini, Vertex AI, BigQuery, GKE, Cloud Run 요약 노트 작성"},
+  {"id": "r3", "phase": 1, "weekRange": "1-4", "title": "Claude Code 또는 Codex 기반 로컬 개발 워크플로우 정립"},
+  {"id": "r4", "phase": 1, "weekRange": "1-4", "title": "Notion 또는 Obsidian 기반 학습 허브 생성"},
+  {"id": "r5", "phase": 1, "weekRange": "1-4", "title": "멀티모달 LLM으로 아키텍처 다이어그램 5개 분석 연습"},
+  {"id": "r6", "phase": 1, "weekRange": "1-4", "title": "PPT 템플릿과 발표 스토리라인 템플릿 작성"},
+  {"id": "r7", "phase": 2, "weekRange": "5-8", "title": "RAG 아키텍처 3개 설계 및 비교"},
+  {"id": "r8", "phase": 2, "weekRange": "5-8", "title": "Agent ADK 기반 샘플 agent 1개 구현 또는 설계 문서화"},
+  {"id": "r9", "phase": 2, "weekRange": "5-8", "title": "MCP/tool calling 구조 예시 정리"},
+  {"id": "r10", "phase": 2, "weekRange": "5-8", "title": "고객 메일 요약, follow-up, action tracker 자동화 루틴 구성"},
+  {"id": "r11", "phase": 2, "weekRange": "5-8", "title": "Slack/Notion/Obsidian 워크플로우 연결"},
+  {"id": "r12", "phase": 2, "weekRange": "5-8", "title": "고객용 10장 내외 제안서 2개 작성"},
+  {"id": "r13", "phase": 3, "weekRange": "9-12", "title": "고객 산업별 reference architecture 3개 작성"},
+  {"id": "r14", "phase": 3, "weekRange": "9-12", "title": "멀티모달 use case별 GCP 매핑 문서 작성"},
+  {"id": "r15", "phase": 3, "weekRange": "9-12", "title": "비용·보안·운영성 포함한 architecture review 훈련"},
+  {"id": "r16", "phase": 3, "weekRange": "9-12", "title": "발표자료 1세트를 완성하고 리허설"},
+  {"id": "r17", "phase": 3, "weekRange": "9-12", "title": "AI agent를 활용한 주간 업무 운영체계 정착"},
+  {"id": "r18", "phase": 3, "weekRange": "9-12", "title": "월간 성숙도 셀프 리뷰 수행"}
+]
