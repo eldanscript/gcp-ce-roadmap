@@ -11,6 +11,7 @@
   let routineChecked = new Set(); // 오늘 체크된 item_id만 (날짜 무관 — 항상 "오늘" 스코프)
   let routineMetrics = {}; // item_id -> 숫자 (예: ex1의 km)
   let customRoutineItems = []; // [{name, section}], localStorage에서 로드 (Task 4)
+  let mealNotes = {}; // slot -> text, 오늘 하루치만 (아침/점심/저녁/간식)
   const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
@@ -205,6 +206,18 @@
     return new Date().toISOString().slice(0, 10);
   }
 
+  function loadCustomRoutineItems() {
+    try {
+      return JSON.parse(localStorage.getItem('gcp-ce-roadmap:customRoutineItems') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCustomRoutineItems(items) {
+    localStorage.setItem('gcp-ce-roadmap:customRoutineItems', JSON.stringify(items));
+  }
+
   function renderRoutineChecklist(container, catalogItems, customItems, checkedIds, metrics) {
     const sections = [
       { key: 'exercise', label: '운동' },
@@ -245,6 +258,64 @@
     });
   }
 
+  function renderCustomItemForm(container) {
+    container.innerHTML = `
+      <h3>내 항목 추가</h3>
+      <select id="custom-item-section">
+        <option value="exercise">운동</option>
+        <option value="medication">약/영양제</option>
+      </select>
+      <input type="text" id="custom-item-name" maxlength="30" placeholder="이름">
+      <button id="custom-item-add">추가</button>
+      <ul id="custom-item-list">
+        ${customRoutineItems.map((c) => `<li>${escapeHtml(c.name)} (${c.section === 'exercise' ? '운동' : '약/영양제'}) <button data-remove-custom="${escapeHtml(c.name)}">삭제</button></li>`).join('')}
+      </ul>
+    `;
+    container.querySelector('#custom-item-add').addEventListener('click', () => {
+      const section = container.querySelector('#custom-item-section').value;
+      const nameInput = container.querySelector('#custom-item-name');
+      const name = nameInput.value.trim();
+      if (!name) return;
+      const exists = customRoutineItems.some((c) => c.name === name) || routineCatalogItems.some((i) => i.title === name);
+      if (exists) {
+        alert('이미 있는 항목이에요');
+        return;
+      }
+      customRoutineItems.push({ name, section });
+      saveCustomRoutineItems(customRoutineItems);
+      nameInput.value = '';
+      renderCustomItemForm(container);
+      renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
+    });
+    container.querySelectorAll('[data-remove-custom]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const name = e.target.dataset.removeCustom;
+        customRoutineItems = customRoutineItems.filter((c) => c.name !== name);
+        saveCustomRoutineItems(customRoutineItems);
+        renderCustomItemForm(container);
+        renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
+      });
+    });
+  }
+
+  function renderMealForm(container) {
+    const slots = ['아침', '점심', '저녁', '간식'];
+    container.innerHTML = `
+      <h3>오늘 식사/간식 기록</h3>
+      ${slots.map((slot) => `
+        <div class="item-row">
+          <label for="meal-${slot}">${escapeHtml(slot)}</label>
+          <input type="text" id="meal-${slot}" data-meal-slot="${slot}" value="${escapeHtml(mealNotes[slot] || '')}" placeholder="예: 닭가슴살 100g + 밥 한공기">
+        </div>`).join('')}
+    `;
+    container.querySelectorAll('[data-meal-slot]').forEach((el) => {
+      el.addEventListener('blur', (e) => {
+        const slot = e.target.dataset.mealSlot;
+        mealNotes[slot] = e.target.value;
+      });
+    });
+  }
+
   function renderTodayTab(container, routineItems, checkedIds) {
     const today = new Date();
     const week = RoadmapLogic.currentWeekNumber(today, PROGRAM_START);
@@ -263,6 +334,8 @@
       ${routineHtml}
       <h2>오늘의 운동·약</h2>
       <div id="routine-checklist"></div>
+      <div id="custom-item-form"></div>
+      <div id="meal-form"></div>
     `;
     const checkbox = container.querySelector('[data-weekly-key]');
     if (checkbox) {
@@ -278,6 +351,8 @@
       });
     }
     renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
+    renderCustomItemForm(document.getElementById('custom-item-form'));
+    renderMealForm(document.getElementById('meal-form'));
   }
 
   function defaultCheckpoint(week) {
@@ -372,6 +447,7 @@
 
   (async function init() {
     await loadStaticData();
+    customRoutineItems = loadCustomRoutineItems();
     try {
       roadmapChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:roadmapChecked') || '[]'));
       capabilityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:capabilityChecked') || '[]'));
