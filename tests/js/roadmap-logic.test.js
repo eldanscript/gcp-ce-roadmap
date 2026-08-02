@@ -51,20 +51,3 @@ test('koreanDayName: maps JS getDay() to Korean weekday names', () => {
   assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-08T12:00:00')), '토'); // Sat
   assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-09T12:00:00')), '일'); // Sun
 });
-
-test('flattenBizEnglish: flattens weeks into leaf items with id/weekNumber/theme/day/activityType', () => {
-  const weeks = [
-    { weekNumber: 1, theme: 'Theme A', days: [
-      { day: '월', activityType: 'Vocab', id: 'w1-mon' },
-      { day: '화', activityType: 'Patterns', id: 'w1-tue' },
-    ] },
-    { weekNumber: 2, theme: 'Theme B', days: [
-      { day: '월', activityType: 'Vocab', id: 'w2-mon' },
-    ] },
-  ];
-  const flat = RoadmapLogic.flattenBizEnglish(weeks);
-  assert.equal(flat.length, 3);
-  assert.deepEqual(flat[0], { id: 'w1-mon', weekNumber: 1, theme: 'Theme A', day: '월', activityType: 'Vocab' });
-  assert.deepEqual(flat[1], { id: 'w1-tue', weekNumber: 1, theme: 'Theme A', day: '화', activityType: 'Patterns' });
-  assert.deepEqual(flat[2], { id: 'w2-mon', weekNumber: 2, theme: 'Theme B', day: '월', activityType: 'Vocab' });
-});
