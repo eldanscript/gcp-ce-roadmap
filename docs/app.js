@@ -3,6 +3,8 @@
   let capabilityItems = [];
   let roadmapChecked = new Set();
   let capabilityChecked = new Set();
+  let weeklyRoutineItems = [];
+  let weeklyChecked = new Set(); // 키 형식: `${weekNumber}-${day}` 예: "3-월"
   const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
@@ -45,12 +47,14 @@
   }
 
   async function loadStaticData() {
-    const [roadmapRes, capabilitiesRes] = await Promise.all([
+    const [roadmapRes, capabilitiesRes, weeklyRoutineRes] = await Promise.all([
       fetch('data/roadmap.json'),
       fetch('data/capabilities.json'),
+      fetch('data/weeklyRoutine.json'),
     ]);
     roadmapItems = await roadmapRes.json();
     capabilityItems = await capabilitiesRes.json();
+    weeklyRoutineItems = await weeklyRoutineRes.json();
   }
 
   function escapeHtml(str) {
@@ -176,6 +180,34 @@
     `;
   }
 
+  function renderTodayTab(container, routineItems, checkedIds) {
+    const today = new Date();
+    const week = RoadmapLogic.currentWeekNumber(today, PROGRAM_START);
+    const dayName = RoadmapLogic.koreanDayName(today);
+    const routineItem = routineItems.find((r) => r.day === dayName);
+    const key = `${week}-${dayName}`;
+    const checked = checkedIds.has(key);
+    const routineHtml = routineItem ? `
+      <div class="item-row">
+        <input type="checkbox" id="today-routine" data-weekly-key="${key}" ${checked ? 'checked' : ''}>
+        <label for="today-routine">[${escapeHtml(dayName)}요일] ${escapeHtml(routineItem.theme)}</label>
+      </div>` : '<p>이번 요일에 해당하는 루틴이 없습니다.</p>';
+    container.innerHTML = `
+      <p>${week}주차 · ${escapeHtml(dayName)}요일</p>
+      <h2>CE 주간 루틴</h2>
+      ${routineHtml}
+      <p class="muted">운동/Biz English는 다음 계획에서 추가됩니다.</p>
+    `;
+    const checkbox = container.querySelector('[data-weekly-key]');
+    if (checkbox) {
+      checkbox.addEventListener('change', (e) => {
+        const k = e.target.dataset.weeklyKey;
+        if (e.target.checked) weeklyChecked.add(k); else weeklyChecked.delete(k);
+        renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
+      });
+    }
+  }
+
   function renderTab(tabName) {
     const view = document.getElementById('view');
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
@@ -187,6 +219,8 @@
       view.innerHTML = '<div id="roadmap-section"></div><h2>역량 체크</h2><div id="capabilities-section"></div>';
       renderRoadmapTab(document.getElementById('roadmap-section'), roadmapItems, roadmapChecked);
       renderCapabilitiesTab(document.getElementById('capabilities-section'), capabilityItems, capabilityChecked);
+    } else if (tabName === 'today') {
+      renderTodayTab(view, weeklyRoutineItems, weeklyChecked);
     } else {
       view.innerHTML = `<p>"${escapeHtml(tabName)}" 탭은 다음 계획에서 구현됩니다.</p>`;
     }
@@ -219,5 +253,5 @@
     }
   })();
 
-  window.App = { renderRoadmapTab, renderCapabilitiesTab, renderHomeTab, escapeHtml };
+  window.App = { renderRoadmapTab, renderCapabilitiesTab, renderHomeTab, renderTodayTab, escapeHtml };
 })();
