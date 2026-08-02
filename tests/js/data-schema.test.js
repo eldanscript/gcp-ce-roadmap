@@ -4,6 +4,7 @@ const roadmap = require('../../docs/data/roadmap.json');
 const capabilities = require('../../docs/data/capabilities.json');
 const weeklyRoutine = require('../../docs/data/weeklyRoutine.json');
 const maturity = require('../../docs/data/maturity.json');
+const routineCatalog = require('../../docs/data/routineCatalog.json');
 
 test('roadmap.json has exactly 18 items', () => {
   assert.equal(roadmap.length, 18);
@@ -76,8 +77,6 @@ test('maturity.json group counts are 3/3/2/2/3', () => {
     '플랫폼': 3, 'AI/Agent': 3, 'Multimodal': 2, 'Production': 2, 'Automate yourself': 3,
   });
 });
-
-const routineCatalog = require('../../docs/data/routineCatalog.json');
 
 test('routineCatalog.json has exactly 11 items (7 exercise + 4 medication)', () => {
   assert.equal(routineCatalog.length, 11);
