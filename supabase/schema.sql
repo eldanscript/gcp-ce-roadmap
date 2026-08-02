@@ -73,3 +73,12 @@ create policy "anon full access" on routine_checkins for all using (true) with c
 create policy "anon full access" on routine_custom_items for all using (true) with check (true);
 create policy "anon full access" on routine_meals for all using (true) with check (true);
 create policy "anon full access" on nutrition_stats for all using (true) with check (true);
+
+create table biz_english_progress (
+  item_id text primary key,
+  checked_at timestamptz not null default now()
+);
+
+alter table biz_english_progress enable row level security;
+
+create policy "anon full access" on biz_english_progress for all using (true) with check (true);

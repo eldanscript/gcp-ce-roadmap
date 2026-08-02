@@ -12,6 +12,9 @@
   let routineMetrics = {}; // item_id -> 숫자 (예: ex1의 km)
   let customRoutineItems = []; // [{name, section}], localStorage에서 로드 (Task 4)
   let mealNotes = {}; // slot -> text, 오늘 하루치만 (아침/점심/저녁/간식)
+  let bizEnglishWeeks = []; // docs/data/bizEnglish.json 원본 (12주)
+  let bizEnglishFlatItems = []; // RoadmapLogic.flattenBizEnglish(bizEnglishWeeks) 결과 (60개)
+  let bizEnglishChecked = new Set(); // 체크된 item_id (w1-mon 등), 12주 범위 전체
   const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
@@ -25,19 +28,21 @@
   const routineQueue = new SupabaseQueue.Queue();
   const mealQueue = new SupabaseQueue.Queue();
   const customItemQueue = new SupabaseQueue.Queue();
+  const bizEnglishQueue = new SupabaseQueue.Queue();
 
   async function loadProgress() {
     const today = todayDateString();
-    const [roadmapRows, capabilityRows, weeklyRows, maturityRows, routineRows, customRows] = await Promise.all([
+    const [roadmapRows, capabilityRows, weeklyRows, maturityRows, routineRows, customRows, bizEnglishRows] = await Promise.all([
       supabaseClient.from('roadmap_progress').select('item_id'),
       supabaseClient.from('capability_progress').select('item_id'),
       supabaseClient.from('weekly_checkins').select('week_number, day'),
       supabaseClient.from('maturity_checkins').select('question_id, checkpoint'),
       supabaseClient.from('routine_checkins').select('item_id, payload').eq('date', today),
       supabaseClient.from('routine_custom_items').select('name, section'),
+      supabaseClient.from('biz_english_progress').select('item_id'),
     ]);
-    if (roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error) {
-      throw roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error;
+    if (roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error || bizEnglishRows.error) {
+      throw roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error || bizEnglishRows.error;
     }
     roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
     capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
@@ -49,6 +54,7 @@
       if (r.payload && r.payload.km !== undefined) routineMetrics[r.item_id] = r.payload.km;
     }
     customRoutineItems = (customRows.data || []).map((r) => ({ name: r.name, section: r.section }));
+    bizEnglishChecked = new Set((bizEnglishRows.data || []).map((r) => r.item_id));
   }
 
   let nutritionStats = null;
@@ -79,6 +85,7 @@
   const sendCapabilityCheck = makeSendCheck('capability_progress', (op) => ({ item_id: op.itemId }));
   const sendWeeklyRoutineCheck = makeSendCheck('weekly_checkins', (op) => ({ week_number: op.weekNumber, day: op.day }));
   const sendMaturityCheck = makeSendCheck('maturity_checkins', (op) => ({ question_id: op.questionId, checkpoint: op.checkpoint }));
+  const sendBizEnglishCheck = makeSendCheck('biz_english_progress', (op) => ({ item_id: op.itemId }));
 
   async function sendRoutineCheck(op) {
     if (op.checked) {
@@ -108,18 +115,21 @@
   }
 
   async function loadStaticData() {
-    const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes, routineCatalogRes] = await Promise.all([
+    const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes, routineCatalogRes, bizEnglishRes] = await Promise.all([
       fetch('data/roadmap.json'),
       fetch('data/capabilities.json'),
       fetch('data/weeklyRoutine.json'),
       fetch('data/maturity.json'),
       fetch('data/routineCatalog.json'),
+      fetch('data/bizEnglish.json'),
     ]);
     roadmapItems = await roadmapRes.json();
     capabilityItems = await capabilitiesRes.json();
     weeklyRoutineItems = await weeklyRoutineRes.json();
     maturityItems = await maturityRes.json();
     routineCatalogItems = await routineCatalogRes.json();
+    bizEnglishWeeks = await bizEnglishRes.json();
+    bizEnglishFlatItems = RoadmapLogic.flattenBizEnglish(bizEnglishWeeks);
   }
 
   function escapeHtml(str) {
@@ -244,6 +254,7 @@
     const checkpointItems = maturityItems.map((m) => ({ id: `${m.id}-${checkpoint}` }));
     const maturitySummary = RoadmapLogic.progressSummary(checkpointItems, maturityChecked);
     const routineSummary = RoadmapLogic.progressSummary(routineCatalogItems, routineChecked);
+    const bizEnglishSummary = RoadmapLogic.progressSummary(bizEnglishFlatItems, bizEnglishChecked);
     container.innerHTML = `
       <p>현재 ${week}주차 (2026-08-04 시작)</p>
       <div class="item-row"><label>로드맵 진척률</label><span>${roadmapSummary.done}/${roadmapSummary.total} (${roadmapSummary.percent}%)</span></div>
@@ -251,6 +262,7 @@
       <div class="item-row"><label>이번 주 루틴</label><span>${weeklySummary.done}/${weeklySummary.total} (${weeklySummary.percent}%)</span></div>
       <div class="item-row"><label>성숙도 체크포인트 ${checkpoint}</label><span>${maturitySummary.done}/${maturitySummary.total} (${maturitySummary.percent}%)</span></div>
       <div class="item-row"><label>오늘 운동·약</label><span>${routineSummary.done}/${routineSummary.total} (${routineSummary.percent}%)</span></div>
+      <div class="item-row"><label>Biz English</label><span>${bizEnglishSummary.done}/${bizEnglishSummary.total} (${bizEnglishSummary.percent}%)</span></div>
     `;
   }
 
@@ -397,10 +409,20 @@
         <input type="checkbox" id="today-routine" data-weekly-key="${key}" ${checked ? 'checked' : ''}>
         <label for="today-routine">[${escapeHtml(dayName)}요일] ${escapeHtml(routineItem.theme)}</label>
       </div>` : '<p>이번 요일에 해당하는 루틴이 없습니다.</p>';
+    const bizWeekData = bizEnglishWeeks.find((w) => w.weekNumber === week);
+    const bizDay = bizWeekData ? bizWeekData.days.find((d) => d.day === dayName) : undefined;
+    const bizChecked = bizDay ? bizEnglishChecked.has(bizDay.id) : false;
+    const bizEnglishHtml = bizDay ? `
+      <div class="item-row">
+        <input type="checkbox" id="today-biz-english" data-biz-english-id="${bizDay.id}" ${bizChecked ? 'checked' : ''}>
+        <label for="today-biz-english">[${week}주차 ${escapeHtml(dayName)}] ${escapeHtml(bizWeekData.theme)} — ${escapeHtml(bizDay.activityType)}</label>
+      </div>` : '<p>오늘은 Biz English 학습이 없는 요일입니다 (평일만).</p>';
     container.innerHTML = `
       <p>${week}주차 · ${escapeHtml(dayName)}요일</p>
       <h2>CE 주간 루틴</h2>
       ${routineHtml}
+      <h2>Biz English</h2>
+      ${bizEnglishHtml}
       <h2>오늘의 운동·약</h2>
       <div id="routine-checklist"></div>
       <div id="custom-item-form"></div>
@@ -416,6 +438,18 @@
         localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
         weeklyQueue.enqueue({ weekNumber: Number(weekNumber), day, checked });
         weeklyQueue.flush(sendWeeklyRoutineCheck);
+        renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
+      });
+    }
+    const bizCheckbox = container.querySelector('[data-biz-english-id]');
+    if (bizCheckbox) {
+      bizCheckbox.addEventListener('change', (e) => {
+        const itemId = e.target.dataset.bizEnglishId;
+        const checked = e.target.checked;
+        if (checked) bizEnglishChecked.add(itemId); else bizEnglishChecked.delete(itemId);
+        localStorage.setItem('gcp-ce-roadmap:bizEnglishChecked', JSON.stringify([...bizEnglishChecked]));
+        bizEnglishQueue.enqueue({ itemId, checked });
+        bizEnglishQueue.flush(sendBizEnglishCheck);
         renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
       });
     }
@@ -467,12 +501,15 @@
     ).join('');
     const remainingRoadmap = RoadmapLogic.sortRemaining(roadmapItems, roadmapChecked, (i) => i.phase);
     const remainingCapabilities = RoadmapLogic.sortRemaining(capabilityItems, capabilityChecked, (i) => i.categoryId);
+    const remainingBizEnglish = RoadmapLogic.sortRemaining(bizEnglishFlatItems, bizEnglishChecked, (i) => i.weekNumber);
     const remainingHtml = `
       <h2>아직 안 한 것</h2>
       <h3>로드맵 (${remainingRoadmap.length}개 남음)</h3>
       ${remainingRoadmap.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingRoadmap.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
       <h3>역량 체크 (${remainingCapabilities.length}개 남음)</h3>
       ${remainingCapabilities.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingCapabilities.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
+      <h3>Biz English (${remainingBizEnglish.length}개 남음)</h3>
+      ${remainingBizEnglish.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingBizEnglish.map((i) => `<div class="item-row"><label>[${i.weekNumber}주차 ${escapeHtml(i.day)}] ${escapeHtml(i.theme)} — ${escapeHtml(i.activityType)}</label></div>`).join('')}
     `;
     container.innerHTML = `
       ${remainingHtml}
@@ -541,6 +578,7 @@
       capabilityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:capabilityChecked') || '[]'));
       weeklyChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:weeklyChecked') || '[]'));
       maturityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:maturityChecked') || '[]'));
+      bizEnglishChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:bizEnglishChecked') || '[]'));
       const today = todayDateString();
       routineChecked = new Set(JSON.parse(localStorage.getItem(`gcp-ce-roadmap:routineChecked:${today}`) || '[]'));
       routineMetrics = JSON.parse(localStorage.getItem(`gcp-ce-roadmap:routineMetrics:${today}`) || '{}');
@@ -554,6 +592,7 @@
       localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
       localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
       localStorage.setItem('gcp-ce-roadmap:maturityChecked', JSON.stringify([...maturityChecked]));
+      localStorage.setItem('gcp-ce-roadmap:bizEnglishChecked', JSON.stringify([...bizEnglishChecked]));
       localStorage.setItem(`gcp-ce-roadmap:routineChecked:${todayDateString()}`, JSON.stringify([...routineChecked]));
       localStorage.setItem(`gcp-ce-roadmap:routineMetrics:${todayDateString()}`, JSON.stringify(routineMetrics));
       renderTab(currentTabFromHash());
