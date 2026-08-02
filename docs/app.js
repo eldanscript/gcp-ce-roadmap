@@ -24,6 +24,7 @@
   const maturityQueue = new SupabaseQueue.Queue();
   const routineQueue = new SupabaseQueue.Queue();
   const mealQueue = new SupabaseQueue.Queue();
+  const customItemQueue = new SupabaseQueue.Queue();
 
   async function loadProgress() {
     const today = todayDateString();
@@ -96,14 +97,14 @@
     if (error) throw error;
   }
 
-  async function sendCustomItemAdd(name, section) {
-    const { error } = await supabaseClient.from('routine_custom_items').upsert({ name, section });
-    if (error) throw error;
-  }
-
-  async function sendCustomItemRemove(name) {
-    const { error } = await supabaseClient.from('routine_custom_items').delete().match({ name });
-    if (error) throw error;
+  async function sendCustomItemOp(op) {
+    if (op.action === 'add') {
+      const { error } = await supabaseClient.from('routine_custom_items').upsert({ name: op.name, section: op.section });
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('routine_custom_items').delete().match({ name: op.name });
+      if (error) throw error;
+    }
   }
 
   async function loadStaticData() {
@@ -298,6 +299,7 @@
         const id = e.target.dataset.routineId;
         const checked = e.target.checked;
         if (checked) routineChecked.add(id); else routineChecked.delete(id);
+        localStorage.setItem(`gcp-ce-roadmap:routineChecked:${todayDateString()}`, JSON.stringify([...routineChecked]));
         const km = metrics[id];
         routineQueue.enqueue({ date: todayDateString(), itemId: id, checked, km: checked ? km : undefined });
         routineQueue.flush(sendRoutineCheck);
@@ -309,6 +311,7 @@
         const id = e.target.dataset.metricFor;
         const value = e.target.value === '' ? undefined : Number(e.target.value);
         if (value === undefined) delete routineMetrics[id]; else routineMetrics[id] = value;
+        localStorage.setItem(`gcp-ce-roadmap:routineMetrics:${todayDateString()}`, JSON.stringify(routineMetrics));
         if (routineChecked.has(id)) {
           routineQueue.enqueue({ date: todayDateString(), itemId: id, checked: true, km: routineMetrics[id] });
           routineQueue.flush(sendRoutineCheck);
@@ -342,7 +345,8 @@
       }
       customRoutineItems.push({ name, section });
       saveCustomRoutineItems(customRoutineItems);
-      sendCustomItemAdd(name, section).catch((err) => console.warn('커스텀 항목 저장 실패', err));
+      customItemQueue.enqueue({ action: 'add', name, section });
+      customItemQueue.flush(sendCustomItemOp);
       nameInput.value = '';
       renderCustomItemForm(container);
       renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
@@ -352,7 +356,8 @@
         const name = e.target.dataset.removeCustom;
         customRoutineItems = customRoutineItems.filter((c) => c.name !== name);
         saveCustomRoutineItems(customRoutineItems);
-        sendCustomItemRemove(name).catch((err) => console.warn('커스텀 항목 삭제 실패', err));
+        customItemQueue.enqueue({ action: 'remove', name });
+        customItemQueue.flush(sendCustomItemOp);
         renderCustomItemForm(container);
         renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
       });
@@ -373,6 +378,7 @@
       el.addEventListener('blur', (e) => {
         const slot = e.target.dataset.mealSlot;
         mealNotes[slot] = e.target.value;
+        localStorage.setItem(`gcp-ce-roadmap:mealNotes:${todayDateString()}`, JSON.stringify(mealNotes));
         mealQueue.enqueue({ date: todayDateString(), slot, note: e.target.value });
         mealQueue.flush(sendMealNote);
       });
@@ -535,6 +541,10 @@
       capabilityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:capabilityChecked') || '[]'));
       weeklyChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:weeklyChecked') || '[]'));
       maturityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:maturityChecked') || '[]'));
+      const today = todayDateString();
+      routineChecked = new Set(JSON.parse(localStorage.getItem(`gcp-ce-roadmap:routineChecked:${today}`) || '[]'));
+      routineMetrics = JSON.parse(localStorage.getItem(`gcp-ce-roadmap:routineMetrics:${today}`) || '{}');
+      mealNotes = JSON.parse(localStorage.getItem(`gcp-ce-roadmap:mealNotes:${today}`) || '{}');
     } catch (e) { /* localStorage 비어있거나 손상 — 빈 Set으로 시작 */ }
     renderTab(currentTabFromHash());
     try {
@@ -544,6 +554,8 @@
       localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
       localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
       localStorage.setItem('gcp-ce-roadmap:maturityChecked', JSON.stringify([...maturityChecked]));
+      localStorage.setItem(`gcp-ce-roadmap:routineChecked:${todayDateString()}`, JSON.stringify([...routineChecked]));
+      localStorage.setItem(`gcp-ce-roadmap:routineMetrics:${todayDateString()}`, JSON.stringify(routineMetrics));
       renderTab(currentTabFromHash());
     } catch (e) {
       console.warn('Supabase 로드 실패 — localStorage 상태로 계속', e);
