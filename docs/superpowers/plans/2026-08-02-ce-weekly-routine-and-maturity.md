@@ -220,7 +220,7 @@ Expected: FAIL — `RoadmapLogic.koreanDayName is not a function`
 - [ ] **Step 4: 테스트 실행해 통과 확인**
 
 Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/roadmap-logic.test.js`
-Expected: 이전 8개 + 신규 4개 = 12개 모두 pass
+Expected: 이전 8개 + 신규 1개(assert 4개 포함) = 9개 모두 pass
 
 - [ ] **Step 5: Commit**
 
