@@ -39,6 +39,17 @@
     maturityChecked = new Set((maturityRows.data || []).map((r) => `${r.question_id}-${r.checkpoint}`));
   }
 
+  let nutritionStats = null;
+
+  async function loadNutritionStats() {
+    const { data, error } = await supabaseClient.from('nutrition_stats').select('*').eq('week_id', 'latest').maybeSingle();
+    if (error) {
+      console.warn('영양 리포트 로드 실패', error);
+      return;
+    }
+    nutritionStats = data;
+  }
+
   function makeSendCheck(table, buildKey) {
     return async function sendCheck(op) {
       const key = buildKey(op);
@@ -361,6 +372,22 @@
     return 3;
   }
 
+  function renderNutritionReport(container, stats) {
+    if (!stats || !stats.weekly_average) {
+      container.innerHTML = '<p class="muted">아직 영양 리포트가 없습니다 (매주 일요일 자동 계산).</p>';
+      return;
+    }
+    const avg = stats.weekly_average;
+    const recs = stats.recommendations || [];
+    const unmatched = stats.unmatched_food_items || [];
+    container.innerHTML = `
+      <p>평균: ${Math.round(avg.kcal)}kcal · 탄 ${Math.round(avg.carb)}g · 지 ${Math.round(avg.fat)}g · 단 ${Math.round(avg.protein)}g</p>
+      ${recs.length ? `<ul>${recs.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}</ul>` : ''}
+      ${unmatched.length ? `<p class="muted">매칭 안 된 항목: ${unmatched.map(escapeHtml).join(', ')}</p>` : ''}
+      <p class="muted">⚠️ 영양 수치는 식약처 공공 데이터베이스 자동 매칭 기반의 대략적 추정치입니다.</p>
+    `;
+  }
+
   function renderReportTab(container, items, checkedIds, checkpoint) {
     const checkpointLabels = { 1: '1 (4주차)', 2: '2 (8주차)', 3: '3 (12주차)' };
     const groups = [...new Set(items.map((i) => i.group))];
@@ -391,10 +418,13 @@
     `;
     container.innerHTML = `
       ${remainingHtml}
+      <h2>주간 영양 리포트</h2>
+      <div id="nutrition-report"></div>
       <h2>성숙도 체크리스트</h2>
       <select id="checkpoint-select">${options}</select>
       ${body}
     `;
+    renderNutritionReport(document.getElementById('nutrition-report'), nutritionStats);
     container.querySelector('#checkpoint-select').addEventListener('change', (e) => {
       renderReportTab(container, maturityItems, maturityChecked, Number(e.target.value));
     });
@@ -457,6 +487,7 @@
     renderTab(currentTabFromHash());
     try {
       await loadProgress();
+      await loadNutritionStats();
       localStorage.setItem('gcp-ce-roadmap:roadmapChecked', JSON.stringify([...roadmapChecked]));
       localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
       localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
