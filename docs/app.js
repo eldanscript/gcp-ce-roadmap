@@ -22,21 +22,32 @@
   const capabilityQueue = new SupabaseQueue.Queue();
   const weeklyQueue = new SupabaseQueue.Queue();
   const maturityQueue = new SupabaseQueue.Queue();
+  const routineQueue = new SupabaseQueue.Queue();
+  const mealQueue = new SupabaseQueue.Queue();
 
   async function loadProgress() {
-    const [roadmapRows, capabilityRows, weeklyRows, maturityRows] = await Promise.all([
+    const today = todayDateString();
+    const [roadmapRows, capabilityRows, weeklyRows, maturityRows, routineRows, customRows] = await Promise.all([
       supabaseClient.from('roadmap_progress').select('item_id'),
       supabaseClient.from('capability_progress').select('item_id'),
       supabaseClient.from('weekly_checkins').select('week_number, day'),
       supabaseClient.from('maturity_checkins').select('question_id, checkpoint'),
+      supabaseClient.from('routine_checkins').select('item_id, payload').eq('date', today),
+      supabaseClient.from('routine_custom_items').select('name, section'),
     ]);
-    if (roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error) {
-      throw roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error;
+    if (roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error) {
+      throw roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error || routineRows.error || customRows.error;
     }
     roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
     capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
     weeklyChecked = new Set((weeklyRows.data || []).map((r) => `${r.week_number}-${r.day}`));
     maturityChecked = new Set((maturityRows.data || []).map((r) => `${r.question_id}-${r.checkpoint}`));
+    routineChecked = new Set((routineRows.data || []).map((r) => r.item_id));
+    routineMetrics = {};
+    for (const r of routineRows.data || []) {
+      if (r.payload && r.payload.km !== undefined) routineMetrics[r.item_id] = r.payload.km;
+    }
+    customRoutineItems = (customRows.data || []).map((r) => ({ name: r.name, section: r.section }));
   }
 
   let nutritionStats = null;
@@ -67,6 +78,33 @@
   const sendCapabilityCheck = makeSendCheck('capability_progress', (op) => ({ item_id: op.itemId }));
   const sendWeeklyRoutineCheck = makeSendCheck('weekly_checkins', (op) => ({ week_number: op.weekNumber, day: op.day }));
   const sendMaturityCheck = makeSendCheck('maturity_checkins', (op) => ({ question_id: op.questionId, checkpoint: op.checkpoint }));
+
+  async function sendRoutineCheck(op) {
+    if (op.checked) {
+      const record = { date: op.date, item_id: op.itemId };
+      if (op.km !== undefined) record.payload = { km: op.km };
+      const { error } = await supabaseClient.from('routine_checkins').upsert(record);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('routine_checkins').delete().match({ date: op.date, item_id: op.itemId });
+      if (error) throw error;
+    }
+  }
+
+  async function sendMealNote(op) {
+    const { error } = await supabaseClient.from('routine_meals').upsert({ date: op.date, slot: op.slot, note: op.note });
+    if (error) throw error;
+  }
+
+  async function sendCustomItemAdd(name, section) {
+    const { error } = await supabaseClient.from('routine_custom_items').upsert({ name, section });
+    if (error) throw error;
+  }
+
+  async function sendCustomItemRemove(name) {
+    const { error } = await supabaseClient.from('routine_custom_items').delete().match({ name });
+    if (error) throw error;
+  }
 
   async function loadStaticData() {
     const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes, routineCatalogRes] = await Promise.all([
@@ -258,7 +296,11 @@
     container.querySelectorAll('[data-routine-id]').forEach((el) => {
       el.addEventListener('change', (e) => {
         const id = e.target.dataset.routineId;
-        if (e.target.checked) routineChecked.add(id); else routineChecked.delete(id);
+        const checked = e.target.checked;
+        if (checked) routineChecked.add(id); else routineChecked.delete(id);
+        const km = metrics[id];
+        routineQueue.enqueue({ date: todayDateString(), itemId: id, checked, km: checked ? km : undefined });
+        routineQueue.flush(sendRoutineCheck);
         renderRoutineChecklist(container, routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
       });
     });
@@ -267,6 +309,10 @@
         const id = e.target.dataset.metricFor;
         const value = e.target.value === '' ? undefined : Number(e.target.value);
         if (value === undefined) delete routineMetrics[id]; else routineMetrics[id] = value;
+        if (routineChecked.has(id)) {
+          routineQueue.enqueue({ date: todayDateString(), itemId: id, checked: true, km: routineMetrics[id] });
+          routineQueue.flush(sendRoutineCheck);
+        }
       });
     });
   }
@@ -296,6 +342,7 @@
       }
       customRoutineItems.push({ name, section });
       saveCustomRoutineItems(customRoutineItems);
+      sendCustomItemAdd(name, section).catch((err) => console.warn('커스텀 항목 저장 실패', err));
       nameInput.value = '';
       renderCustomItemForm(container);
       renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
@@ -305,6 +352,7 @@
         const name = e.target.dataset.removeCustom;
         customRoutineItems = customRoutineItems.filter((c) => c.name !== name);
         saveCustomRoutineItems(customRoutineItems);
+        sendCustomItemRemove(name).catch((err) => console.warn('커스텀 항목 삭제 실패', err));
         renderCustomItemForm(container);
         renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
       });
@@ -325,6 +373,8 @@
       el.addEventListener('blur', (e) => {
         const slot = e.target.dataset.mealSlot;
         mealNotes[slot] = e.target.value;
+        mealQueue.enqueue({ date: todayDateString(), slot, note: e.target.value });
+        mealQueue.flush(sendMealNote);
       });
     });
   }
