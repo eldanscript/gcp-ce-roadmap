@@ -246,7 +246,17 @@
     const options = [1, 2, 3].map((cp) =>
       `<option value="${cp}" ${cp === checkpoint ? 'selected' : ''}>체크포인트 ${checkpointLabels[cp]}</option>`
     ).join('');
+    const remainingRoadmap = RoadmapLogic.sortRemaining(roadmapItems, roadmapChecked, (i) => i.phase);
+    const remainingCapabilities = RoadmapLogic.sortRemaining(capabilityItems, capabilityChecked, (i) => i.categoryId);
+    const remainingHtml = `
+      <h2>아직 안 한 것</h2>
+      <h3>로드맵 (${remainingRoadmap.length}개 남음)</h3>
+      ${remainingRoadmap.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingRoadmap.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
+      <h3>역량 체크 (${remainingCapabilities.length}개 남음)</h3>
+      ${remainingCapabilities.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingCapabilities.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
+    `;
     container.innerHTML = `
+      ${remainingHtml}
       <h2>성숙도 체크리스트</h2>
       <select id="checkpoint-select">${options}</select>
       ${body}
