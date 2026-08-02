@@ -22,12 +22,7 @@
     return remaining.slice().sort((a, b) => priorityFn(a) - priorityFn(b));
   }
 
-  function koreanDayName(date) {
-    const names = ['일', '월', '화', '수', '목', '금', '토'];
-    return names[date.getDay()];
-  }
-
-  const RoadmapLogic = { currentWeekNumber, progressSummary, sortRemaining, koreanDayName };
+  const RoadmapLogic = { currentWeekNumber, progressSummary, sortRemaining };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = RoadmapLogic;
