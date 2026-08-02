@@ -27,7 +27,17 @@
     return names[date.getDay()];
   }
 
-  const RoadmapLogic = { currentWeekNumber, progressSummary, sortRemaining, koreanDayName };
+  function flattenBizEnglish(weeks) {
+    const flat = [];
+    for (const week of weeks) {
+      for (const d of week.days) {
+        flat.push({ id: d.id, weekNumber: week.weekNumber, theme: week.theme, day: d.day, activityType: d.activityType });
+      }
+    }
+    return flat;
+  }
+
+  const RoadmapLogic = { currentWeekNumber, progressSummary, sortRemaining, koreanDayName, flattenBizEnglish };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = RoadmapLogic;
