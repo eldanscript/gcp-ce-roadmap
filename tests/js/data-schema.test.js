@@ -51,3 +51,29 @@ test('capabilities.json category 11 has 33 items, others do not use subgroup', (
   }
   assert.equal(byCategory[11], 33);
 });
+
+const weeklyRoutine = require('../../docs/data/weeklyRoutine.json');
+const maturity = require('../../docs/data/maturity.json');
+
+test('weeklyRoutine.json has exactly 7 items, one per day', () => {
+  assert.equal(weeklyRoutine.length, 7);
+  const days = weeklyRoutine.map((r) => r.day).sort();
+  assert.deepEqual(days, ['금', '목', '수', '월', '일', '토', '화'].sort());
+});
+
+test('maturity.json has exactly 13 items', () => {
+  assert.equal(maturity.length, 13);
+});
+
+test('maturity.json ids are unique', () => {
+  const ids = maturity.map((m) => m.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test('maturity.json group counts are 3/3/2/2/3', () => {
+  const counts = {};
+  for (const item of maturity) counts[item.group] = (counts[item.group] || 0) + 1;
+  assert.deepEqual(counts, {
+    '플랫폼': 3, 'AI/Agent': 3, 'Multimodal': 2, 'Production': 2, 'Automate yourself': 3,
+  });
+});
