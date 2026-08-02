@@ -1,0 +1,15 @@
+[
+  {"id": "m1", "group": "플랫폼", "question": "GCP 핵심 서비스 간 관계를 설명할 수 있는가"},
+  {"id": "m2", "group": "플랫폼", "question": "AWS 경험을 GCP로 자연스럽게 매핑할 수 있는가"},
+  {"id": "m3", "group": "플랫폼", "question": "고객 워크로드에 맞는 서비스 선택 이유를 말할 수 있는가"},
+  {"id": "m4", "group": "AI/Agent", "question": "Prompt, RAG, fine-tuning의 선택 기준을 설명할 수 있는가"},
+  {"id": "m5", "group": "AI/Agent", "question": "ADK, MCP, A2A의 역할을 설명할 수 있는가"},
+  {"id": "m6", "group": "AI/Agent", "question": "Agent와 chatbot의 차이를 실무 시나리오로 말할 수 있는가"},
+  {"id": "m7", "group": "Multimodal", "question": "이미지, 다이어그램, 스크린샷을 보고 기술적 판단을 내릴 수 있는가"},
+  {"id": "m8", "group": "Multimodal", "question": "비디오/문서/오디오 use case를 GCP 아키텍처로 변환할 수 있는가"},
+  {"id": "m9", "group": "Production", "question": "비용, 보안, 운영성, 모니터링까지 포함한 설계를 설명할 수 있는가"},
+  {"id": "m10", "group": "Production", "question": "프로덕션 전환 장벽을 기술 외 요소까지 포함해 설명할 수 있는가"},
+  {"id": "m11", "group": "Automate yourself", "question": "메일, 검색, 문서화, 발표자료 작성 중 2개 이상을 AI로 자동화했는가"},
+  {"id": "m12", "group": "Automate yourself", "question": "개인 지식베이스와 일정 관리가 AI 기반으로 연결되어 있는가"},
+  {"id": "m13", "group": "Automate yourself", "question": "반복 학습 루틴이 템플릿과 agent로 재사용 가능하게 구성되어 있는가"}
+]
