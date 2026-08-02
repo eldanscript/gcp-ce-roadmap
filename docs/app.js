@@ -181,10 +181,17 @@
     const roadmapSummary = RoadmapLogic.progressSummary(roadmapItems, roadmapChecked);
     const capabilitySummary = RoadmapLogic.progressSummary(capabilityItems, capabilityChecked);
     const week = RoadmapLogic.currentWeekNumber(new Date(), PROGRAM_START);
+    const weekDayItems = weeklyRoutineItems.map((r) => ({ id: `${week}-${r.day}` }));
+    const weeklySummary = RoadmapLogic.progressSummary(weekDayItems, weeklyChecked);
+    const checkpoint = defaultCheckpoint(week);
+    const checkpointItems = maturityItems.map((m) => ({ id: `${m.id}-${checkpoint}` }));
+    const maturitySummary = RoadmapLogic.progressSummary(checkpointItems, maturityChecked);
     container.innerHTML = `
       <p>현재 ${week}주차 (2026-08-04 시작)</p>
       <div class="item-row"><label>로드맵 진척률</label><span>${roadmapSummary.done}/${roadmapSummary.total} (${roadmapSummary.percent}%)</span></div>
       <div class="item-row"><label>역량 체크 진척률</label><span>${capabilitySummary.done}/${capabilitySummary.total} (${capabilitySummary.percent}%)</span></div>
+      <div class="item-row"><label>이번 주 루틴</label><span>${weeklySummary.done}/${weeklySummary.total} (${weeklySummary.percent}%)</span></div>
+      <div class="item-row"><label>성숙도 체크포인트 ${checkpoint}</label><span>${maturitySummary.done}/${maturitySummary.total} (${maturitySummary.percent}%)</span></div>
     `;
   }
 
