@@ -756,7 +756,7 @@ def test_compute_weekly_nutrition_averages_across_days_with_data():
         {"date": "2026-08-02", "slot": "아침", "note": "빵"},
     ]
     result = wnr.compute_weekly_nutrition(rows, estimate_fn=_fake_estimate)
-    assert result["weeklyAverage"] == {"kcal": 200.0, "protein": 10.0, "fat": 6.0, "carb": 20.0}
+    assert result["weeklyAverage"] == {"kcal": 150.0, "protein": 7.5, "fat": 4.5, "carb": 15.0}
     assert result["unmatchedFoodItems"] == []
 
 
