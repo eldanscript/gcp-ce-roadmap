@@ -44,3 +44,10 @@ test('sortRemaining: custom priorityFn sorts ascending', () => {
   const result = RoadmapLogic.sortRemaining(items, new Set(), (item) => item.phase);
   assert.deepEqual(result.map((i) => i.id), ['b', 'c', 'a']);
 });
+
+test('koreanDayName: maps JS getDay() to Korean weekday names', () => {
+  assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-03T12:00:00')), '월'); // Mon
+  assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-04T12:00:00')), '화'); // Tue
+  assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-08T12:00:00')), '토'); // Sat
+  assert.equal(RoadmapLogic.koreanDayName(new Date('2026-08-09T12:00:00')), '일'); // Sun
+});
