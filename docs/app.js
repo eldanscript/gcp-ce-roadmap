@@ -7,6 +7,10 @@
   let weeklyChecked = new Set(); // 키 형식: `${weekNumber}-${day}` 예: "3-월"
   let maturityItems = [];
   let maturityChecked = new Set(); // 키 형식: `${questionId}-${checkpoint}` 예: "m1-1"
+  let routineCatalogItems = [];
+  let routineChecked = new Set(); // 오늘 체크된 item_id만 (날짜 무관 — 항상 "오늘" 스코프)
+  let routineMetrics = {}; // item_id -> 숫자 (예: ex1의 km)
+  let customRoutineItems = []; // [{name, section}], localStorage에서 로드 (Task 4)
   const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
@@ -53,16 +57,18 @@
   const sendMaturityCheck = makeSendCheck('maturity_checkins', (op) => ({ question_id: op.questionId, checkpoint: op.checkpoint }));
 
   async function loadStaticData() {
-    const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes] = await Promise.all([
+    const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes, routineCatalogRes] = await Promise.all([
       fetch('data/roadmap.json'),
       fetch('data/capabilities.json'),
       fetch('data/weeklyRoutine.json'),
       fetch('data/maturity.json'),
+      fetch('data/routineCatalog.json'),
     ]);
     roadmapItems = await roadmapRes.json();
     capabilityItems = await capabilitiesRes.json();
     weeklyRoutineItems = await weeklyRoutineRes.json();
     maturityItems = await maturityRes.json();
+    routineCatalogItems = await routineCatalogRes.json();
   }
 
   function escapeHtml(str) {
@@ -195,6 +201,49 @@
     `;
   }
 
+  function todayDateString() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function renderRoutineChecklist(container, catalogItems, customItems, checkedIds, metrics) {
+    const sections = [
+      { key: 'exercise', label: '운동' },
+      { key: 'medication', label: '약/영양제' },
+    ];
+    const html = sections.map(({ key, label }) => {
+      const catalogRows = catalogItems.filter((i) => i.section === key);
+      const customRows = customItems.filter((c) => c.section === key).map((c) => ({ id: c.name, section: key, title: c.name }));
+      const rows = [...catalogRows, ...customRows].map((item) => {
+        const checked = checkedIds.has(item.id);
+        const metricInput = item.metric
+          ? `<input type="number" step="0.1" min="${item.metric.min}" max="${item.metric.max}" class="metric-input" data-metric-for="${item.id}" value="${metrics[item.id] !== undefined ? metrics[item.id] : ''}" placeholder="${escapeHtml(item.metric.unit)}">`
+          : '';
+        return `
+          <div class="item-row">
+            <input type="checkbox" id="routine-${item.id}" data-routine-id="${item.id}" ${checked ? 'checked' : ''}>
+            <label for="routine-${item.id}">${escapeHtml(item.title)}</label>
+            ${metricInput}
+          </div>`;
+      }).join('');
+      return `<h3>${escapeHtml(label)}</h3>${rows}`;
+    }).join('');
+    container.innerHTML = html;
+    container.querySelectorAll('[data-routine-id]').forEach((el) => {
+      el.addEventListener('change', (e) => {
+        const id = e.target.dataset.routineId;
+        if (e.target.checked) routineChecked.add(id); else routineChecked.delete(id);
+        renderRoutineChecklist(container, routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
+      });
+    });
+    container.querySelectorAll('[data-metric-for]').forEach((el) => {
+      el.addEventListener('blur', (e) => {
+        const id = e.target.dataset.metricFor;
+        const value = e.target.value === '' ? undefined : Number(e.target.value);
+        if (value === undefined) delete routineMetrics[id]; else routineMetrics[id] = value;
+      });
+    });
+  }
+
   function renderTodayTab(container, routineItems, checkedIds) {
     const today = new Date();
     const week = RoadmapLogic.currentWeekNumber(today, PROGRAM_START);
@@ -211,7 +260,8 @@
       <p>${week}주차 · ${escapeHtml(dayName)}요일</p>
       <h2>CE 주간 루틴</h2>
       ${routineHtml}
-      <p class="muted">운동/Biz English는 다음 계획에서 추가됩니다.</p>
+      <h2>오늘의 운동·약</h2>
+      <div id="routine-checklist"></div>
     `;
     const checkbox = container.querySelector('[data-weekly-key]');
     if (checkbox) {
@@ -226,6 +276,7 @@
         renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
       });
     }
+    renderRoutineChecklist(document.getElementById('routine-checklist'), routineCatalogItems, customRoutineItems, routineChecked, routineMetrics);
   }
 
   function defaultCheckpoint(week) {
