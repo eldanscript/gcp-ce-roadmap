@@ -76,3 +76,24 @@ test('maturity.json group counts are 3/3/2/2/3', () => {
     '플랫폼': 3, 'AI/Agent': 3, 'Multimodal': 2, 'Production': 2, 'Automate yourself': 3,
   });
 });
+
+const routineCatalog = require('../../docs/data/routineCatalog.json');
+
+test('routineCatalog.json has exactly 11 items (7 exercise + 4 medication)', () => {
+  assert.equal(routineCatalog.length, 11);
+  const bySection = {};
+  for (const item of routineCatalog) bySection[item.section] = (bySection[item.section] || 0) + 1;
+  assert.deepEqual(bySection, { exercise: 7, medication: 4 });
+});
+
+test('routineCatalog.json ids are unique', () => {
+  const ids = routineCatalog.map((r) => r.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test('routineCatalog.json: only 슬로우 조깅 has a metric', () => {
+  const withMetric = routineCatalog.filter((r) => r.metric);
+  assert.equal(withMetric.length, 1);
+  assert.equal(withMetric[0].id, 'ex1');
+  assert.deepEqual(withMetric[0].metric, { key: 'km', unit: 'km', min: 0.1, max: 99 });
+});
