@@ -5,6 +5,8 @@
   let capabilityChecked = new Set();
   let weeklyRoutineItems = [];
   let weeklyChecked = new Set(); // 키 형식: `${weekNumber}-${day}` 예: "3-월"
+  let maturityItems = [];
+  let maturityChecked = new Set(); // 키 형식: `${questionId}-${checkpoint}` 예: "m1-1"
   const PROGRAM_START = new Date('2026-08-04T00:00:00');
 
   const supabaseClient = window.supabase.createClient(
@@ -47,14 +49,16 @@
   }
 
   async function loadStaticData() {
-    const [roadmapRes, capabilitiesRes, weeklyRoutineRes] = await Promise.all([
+    const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes] = await Promise.all([
       fetch('data/roadmap.json'),
       fetch('data/capabilities.json'),
       fetch('data/weeklyRoutine.json'),
+      fetch('data/maturity.json'),
     ]);
     roadmapItems = await roadmapRes.json();
     capabilityItems = await capabilitiesRes.json();
     weeklyRoutineItems = await weeklyRoutineRes.json();
+    maturityItems = await maturityRes.json();
   }
 
   function escapeHtml(str) {
@@ -208,6 +212,48 @@
     }
   }
 
+  function defaultCheckpoint(week) {
+    if (week <= 4) return 1;
+    if (week <= 8) return 2;
+    return 3;
+  }
+
+  function renderReportTab(container, items, checkedIds, checkpoint) {
+    const checkpointLabels = { 1: '1 (4주차)', 2: '2 (8주차)', 3: '3 (12주차)' };
+    const groups = [...new Set(items.map((i) => i.group))];
+    const body = groups.map((group) => {
+      const groupItems = items.filter((i) => i.group === group);
+      const rows = groupItems.map((item) => {
+        const key = `${item.id}-${checkpoint}`;
+        const checked = checkedIds.has(key);
+        return `
+          <div class="item-row">
+            <input type="checkbox" id="mat-${key}" data-maturity-key="${key}" ${checked ? 'checked' : ''}>
+            <label for="mat-${key}">${escapeHtml(item.question)}</label>
+          </div>`;
+      }).join('');
+      return `<h3>${escapeHtml(group)}</h3>${rows}`;
+    }).join('');
+    const options = [1, 2, 3].map((cp) =>
+      `<option value="${cp}" ${cp === checkpoint ? 'selected' : ''}>체크포인트 ${checkpointLabels[cp]}</option>`
+    ).join('');
+    container.innerHTML = `
+      <h2>성숙도 체크리스트</h2>
+      <select id="checkpoint-select">${options}</select>
+      ${body}
+    `;
+    container.querySelector('#checkpoint-select').addEventListener('change', (e) => {
+      renderReportTab(container, maturityItems, maturityChecked, Number(e.target.value));
+    });
+    container.querySelectorAll('[data-maturity-key]').forEach((el) => {
+      el.addEventListener('change', (e) => {
+        const k = e.target.dataset.maturityKey;
+        if (e.target.checked) maturityChecked.add(k); else maturityChecked.delete(k);
+        renderReportTab(container, maturityItems, maturityChecked, checkpoint);
+      });
+    });
+  }
+
   function renderTab(tabName) {
     const view = document.getElementById('view');
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
@@ -221,6 +267,9 @@
       renderCapabilitiesTab(document.getElementById('capabilities-section'), capabilityItems, capabilityChecked);
     } else if (tabName === 'today') {
       renderTodayTab(view, weeklyRoutineItems, weeklyChecked);
+    } else if (tabName === 'report') {
+      const week = RoadmapLogic.currentWeekNumber(new Date(), PROGRAM_START);
+      renderReportTab(view, maturityItems, maturityChecked, defaultCheckpoint(week));
     } else {
       view.innerHTML = `<p>"${escapeHtml(tabName)}" 탭은 다음 계획에서 구현됩니다.</p>`;
     }
@@ -253,5 +302,5 @@
     }
   })();
 
-  window.App = { renderRoadmapTab, renderCapabilitiesTab, renderHomeTab, renderTodayTab, escapeHtml };
+  window.App = { renderRoadmapTab, renderCapabilitiesTab, renderHomeTab, renderTodayTab, renderReportTab, escapeHtml };
 })();
