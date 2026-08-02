@@ -215,13 +215,14 @@
       const customRows = customItems.filter((c) => c.section === key).map((c) => ({ id: c.name, section: key, title: c.name }));
       const rows = [...catalogRows, ...customRows].map((item) => {
         const checked = checkedIds.has(item.id);
+        const safeId = escapeHtml(item.id);
         const metricInput = item.metric
-          ? `<input type="number" step="0.1" min="${item.metric.min}" max="${item.metric.max}" class="metric-input" data-metric-for="${item.id}" value="${metrics[item.id] !== undefined ? metrics[item.id] : ''}" placeholder="${escapeHtml(item.metric.unit)}">`
+          ? `<input type="number" step="0.1" min="${item.metric.min}" max="${item.metric.max}" class="metric-input" data-metric-for="${safeId}" value="${metrics[item.id] !== undefined ? metrics[item.id] : ''}" placeholder="${escapeHtml(item.metric.unit)}">`
           : '';
         return `
           <div class="item-row">
-            <input type="checkbox" id="routine-${item.id}" data-routine-id="${item.id}" ${checked ? 'checked' : ''}>
-            <label for="routine-${item.id}">${escapeHtml(item.title)}</label>
+            <input type="checkbox" id="routine-${safeId}" data-routine-id="${safeId}" ${checked ? 'checked' : ''}>
+            <label for="routine-${safeId}">${escapeHtml(item.title)}</label>
             ${metricInput}
           </div>`;
       }).join('');
