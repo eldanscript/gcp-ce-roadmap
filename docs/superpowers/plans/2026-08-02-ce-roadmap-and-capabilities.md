@@ -461,7 +461,7 @@ body {
 .item-row label { flex: 1; }
 ```
 
-- [ ] **Step 3: `docs/config.js.example` 작성** (실제 `config.js`는 git에 커밋하지 않고 Task 6에서 실제 값으로 로컬 생성 — Supabase anon key는 공개 저장소에 원문 그대로 커밋하지 않는다)
+- [ ] **Step 3: `docs/config.js.example` 작성**
 
 ```js
 window.ROUTINE_CONFIG = {
@@ -470,17 +470,20 @@ window.ROUTINE_CONFIG = {
 };
 ```
 
-- [ ] **Step 4: `.gitignore`에 `docs/config.js` 추가**
+> **정정 (Plan 1 배포 후 발견, 2026-08-02): `docs/config.js`를 gitignore하지 않는다.**
+> 애초 이 계획은 "Supabase anon key는 공개 저장소에 커밋하지 않는다"고 가정해 Step 4에서
+> `.gitignore`에 추가했으나, 이는 틀렸다 — routine-jammy의 실제 운영 방식(`docs/config.js`
+> 커밋됨, 파일 안에 "publishable 키는 클라이언트 노출을 전제로 설계됨 — 커밋해도 된다,
+> 실제 접근 통제는 DB RLS가 한다"는 주석 포함)과 대조해 확인했다. GitHub Pages는 gitignore된
+> 파일을 배포하지 않으므로, 이 실수 때문에 Plan 1을 처음 배포했을 때 실제 사이트의
+> `config.js`가 404여서 Supabase 연동이 완전히 깨져 있었다(사용자가 배포 확인을 요청해
+> 뒤늦게 발견·수정). **Task 6에서 실제 `docs/config.js`를 만들 때는 반드시 커밋한다** —
+> 아래 Task 6 Step 3/4도 이에 맞게 정정되어 있다.
+
+- [ ] **Step 4: Commit**
 
 ```bash
-cd /home/rainny/dev-run/gcp-ce-roadmap
-printf 'docs/config.js\n' >> .gitignore
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add docs/index.html docs/style.css docs/config.js.example .gitignore
+git add docs/index.html docs/style.css docs/config.js.example
 git commit -m "feat: add PWA shell with 4-tab bottom nav"
 ```
 
@@ -717,7 +720,10 @@ create policy "anon full access" on capability_progress for all using (true) wit
 3. 프로젝트 대시보드 → SQL Editor → 위 `supabase/schema.sql` 내용 붙여넣고 Run
 4. 프로젝트 Settings → API에서 **Project URL**과 **anon public key** 확인
 
-- [ ] **Step 3 (사용자 수행): `docs/config.js` 실제 값으로 생성** (git에는 커밋되지 않음 — Task 3에서 `.gitignore` 처리됨)
+- [ ] **Step 3 (사용자 수행): `docs/config.js` 실제 값으로 생성 후 커밋**
+  (publishable 키는 클라이언트 노출을 전제로 설계된 키라 커밋해도 된다 — 위 Task 3 정정
+  참고. GitHub Pages는 커밋되지 않은 파일을 배포하지 않으므로, 커밋하지 않으면 실제
+  배포 사이트의 Supabase 연동이 깨진다.)
 
 ```bash
 cd /home/rainny/dev-run/gcp-ce-roadmap
@@ -725,10 +731,10 @@ cp docs/config.js.example docs/config.js
 # docs/config.js를 열어 supabaseUrl과 publishableKey를 Step 2에서 확인한 실제 값으로 교체
 ```
 
-- [ ] **Step 4: Commit (schema.sql만 — config.js는 이미 gitignore됨)**
+- [ ] **Step 4: Commit (schema.sql + config.js 둘 다)**
 
 ```bash
-git add supabase/schema.sql
+git add supabase/schema.sql docs/config.js
 git commit -m "feat: add Supabase schema for roadmap/capability progress tables"
 ```
 
