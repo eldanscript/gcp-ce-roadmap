@@ -501,12 +501,15 @@
     ).join('');
     const remainingRoadmap = RoadmapLogic.sortRemaining(roadmapItems, roadmapChecked, (i) => i.phase);
     const remainingCapabilities = RoadmapLogic.sortRemaining(capabilityItems, capabilityChecked, (i) => i.categoryId);
+    const remainingBizEnglish = RoadmapLogic.sortRemaining(bizEnglishFlatItems, bizEnglishChecked, (i) => i.weekNumber);
     const remainingHtml = `
       <h2>아직 안 한 것</h2>
       <h3>로드맵 (${remainingRoadmap.length}개 남음)</h3>
       ${remainingRoadmap.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingRoadmap.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
       <h3>역량 체크 (${remainingCapabilities.length}개 남음)</h3>
       ${remainingCapabilities.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingCapabilities.map((i) => `<div class="item-row"><label>${escapeHtml(i.title)}</label></div>`).join('')}
+      <h3>Biz English (${remainingBizEnglish.length}개 남음)</h3>
+      ${remainingBizEnglish.length === 0 ? '<p>모두 완료했습니다.</p>' : remainingBizEnglish.map((i) => `<div class="item-row"><label>[${i.weekNumber}주차 ${escapeHtml(i.day)}] ${escapeHtml(i.theme)} — ${escapeHtml(i.activityType)}</label></div>`).join('')}
     `;
     container.innerHTML = `
       ${remainingHtml}
