@@ -706,7 +706,7 @@ git commit -m "feat: add weekly routine and maturity progress to home tab"
 - [ ] **Step 1: 전체 유닛테스트 실행**
 
 Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/*.test.js`
-Expected: Plan 1의 20개 + Task 1의 4개 + Task 3의 4개 = 28개 모두 pass
+Expected: Plan 1의 20개 + Task 1의 4개 + Task 3의 1개(assert 4개 포함) = 25개 모두 pass
 
 - [ ] **Step 2 (PR/merge 후, 사용자 수행): 실기기 확인**
 

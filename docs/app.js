@@ -117,7 +117,7 @@
         const checked = e.target.checked;
         if (checked) roadmapChecked.add(id); else roadmapChecked.delete(id);
         localStorage.setItem('gcp-ce-roadmap:roadmapChecked', JSON.stringify([...roadmapChecked]));
-        roadmapQueue.enqueue({ table: 'roadmap_progress', itemId: id, checked });
+        roadmapQueue.enqueue({ itemId: id, checked });
         roadmapQueue.flush(sendRoadmapCheck);
         renderRoadmapTab(container, roadmapItems, roadmapChecked);
       });
@@ -170,7 +170,7 @@
         const checked = e.target.checked;
         if (checked) capabilityChecked.add(id); else capabilityChecked.delete(id);
         localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
-        capabilityQueue.enqueue({ table: 'capability_progress', itemId: id, checked });
+        capabilityQueue.enqueue({ itemId: id, checked });
         capabilityQueue.flush(sendCapabilityCheck);
         renderCapabilitiesTab(container, capabilityItems, capabilityChecked);
       });
@@ -221,7 +221,7 @@
         const [weekNumber, day] = k.split('-');
         if (checked) weeklyChecked.add(k); else weeklyChecked.delete(k);
         localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
-        weeklyQueue.enqueue({ table: 'weekly_checkins', weekNumber: Number(weekNumber), day, checked });
+        weeklyQueue.enqueue({ weekNumber: Number(weekNumber), day, checked });
         weeklyQueue.flush(sendWeeklyRoutineCheck);
         renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
       });
@@ -280,7 +280,7 @@
         const cp = Number(k.slice(dashIndex + 1));
         if (checked) maturityChecked.add(k); else maturityChecked.delete(k);
         localStorage.setItem('gcp-ce-roadmap:maturityChecked', JSON.stringify([...maturityChecked]));
-        maturityQueue.enqueue({ table: 'maturity_checkins', questionId, checkpoint: cp, checked });
+        maturityQueue.enqueue({ questionId, checkpoint: cp, checked });
         maturityQueue.flush(sendMaturityCheck);
         renderReportTab(container, maturityItems, maturityChecked, checkpoint);
       });
