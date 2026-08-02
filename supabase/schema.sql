@@ -34,3 +34,42 @@ alter table maturity_checkins enable row level security;
 
 create policy "anon full access" on weekly_checkins for all using (true) with check (true);
 create policy "anon full access" on maturity_checkins for all using (true) with check (true);
+
+create table routine_checkins (
+  date date not null,
+  item_id text not null,
+  payload jsonb,
+  checked_at timestamptz not null default now(),
+  primary key (date, item_id)
+);
+
+create table routine_custom_items (
+  name text primary key,
+  section text not null check (section in ('exercise', 'medication')),
+  created_at timestamptz not null default now()
+);
+
+create table routine_meals (
+  date date not null,
+  slot text not null check (slot in ('아침', '점심', '저녁', '간식')),
+  note text,
+  primary key (date, slot)
+);
+
+create table nutrition_stats (
+  week_id text primary key,
+  weekly_average jsonb,
+  recommendations jsonb,
+  unmatched_food_items jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table routine_checkins enable row level security;
+alter table routine_custom_items enable row level security;
+alter table routine_meals enable row level security;
+alter table nutrition_stats enable row level security;
+
+create policy "anon full access" on routine_checkins for all using (true) with check (true);
+create policy "anon full access" on routine_custom_items for all using (true) with check (true);
+create policy "anon full access" on routine_meals for all using (true) with check (true);
+create policy "anon full access" on nutrition_stats for all using (true) with check (true);
