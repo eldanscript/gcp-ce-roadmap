@@ -2,6 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const roadmap = require('../../docs/data/roadmap.json');
 const capabilities = require('../../docs/data/capabilities.json');
+const weeklyRoutine = require('../../docs/data/weeklyRoutine.json');
+const maturity = require('../../docs/data/maturity.json');
 
 test('roadmap.json has exactly 18 items', () => {
   assert.equal(roadmap.length, 18);
@@ -51,9 +53,6 @@ test('capabilities.json category 11 has 33 items, others do not use subgroup', (
   }
   assert.equal(byCategory[11], 33);
 });
-
-const weeklyRoutine = require('../../docs/data/weeklyRoutine.json');
-const maturity = require('../../docs/data/maturity.json');
 
 test('weeklyRoutine.json has exactly 7 items, one per day', () => {
   assert.equal(weeklyRoutine.length, 7);
