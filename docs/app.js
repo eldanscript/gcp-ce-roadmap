@@ -15,38 +15,42 @@
   );
   const roadmapQueue = new SupabaseQueue.Queue();
   const capabilityQueue = new SupabaseQueue.Queue();
+  const weeklyQueue = new SupabaseQueue.Queue();
+  const maturityQueue = new SupabaseQueue.Queue();
 
   async function loadProgress() {
-    const [roadmapRows, capabilityRows] = await Promise.all([
+    const [roadmapRows, capabilityRows, weeklyRows, maturityRows] = await Promise.all([
       supabaseClient.from('roadmap_progress').select('item_id'),
       supabaseClient.from('capability_progress').select('item_id'),
+      supabaseClient.from('weekly_checkins').select('week_number, day'),
+      supabaseClient.from('maturity_checkins').select('question_id, checkpoint'),
     ]);
-    if (roadmapRows.error || capabilityRows.error) {
-      throw roadmapRows.error || capabilityRows.error;
+    if (roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error) {
+      throw roadmapRows.error || capabilityRows.error || weeklyRows.error || maturityRows.error;
     }
     roadmapChecked = new Set((roadmapRows.data || []).map((r) => r.item_id));
     capabilityChecked = new Set((capabilityRows.data || []).map((r) => r.item_id));
+    weeklyChecked = new Set((weeklyRows.data || []).map((r) => `${r.week_number}-${r.day}`));
+    maturityChecked = new Set((maturityRows.data || []).map((r) => `${r.question_id}-${r.checkpoint}`));
   }
 
-  async function sendRoadmapCheck(op) {
-    if (op.checked) {
-      const { error } = await supabaseClient.from('roadmap_progress').upsert({ item_id: op.itemId });
-      if (error) throw error;
-    } else {
-      const { error } = await supabaseClient.from('roadmap_progress').delete().eq('item_id', op.itemId);
-      if (error) throw error;
-    }
+  function makeSendCheck(table, buildKey) {
+    return async function sendCheck(op) {
+      const key = buildKey(op);
+      if (op.checked) {
+        const { error } = await supabaseClient.from(table).upsert(key);
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseClient.from(table).delete().match(key);
+        if (error) throw error;
+      }
+    };
   }
 
-  async function sendCapabilityCheck(op) {
-    if (op.checked) {
-      const { error } = await supabaseClient.from('capability_progress').upsert({ item_id: op.itemId });
-      if (error) throw error;
-    } else {
-      const { error } = await supabaseClient.from('capability_progress').delete().eq('item_id', op.itemId);
-      if (error) throw error;
-    }
-  }
+  const sendRoadmapCheck = makeSendCheck('roadmap_progress', (op) => ({ item_id: op.itemId }));
+  const sendCapabilityCheck = makeSendCheck('capability_progress', (op) => ({ item_id: op.itemId }));
+  const sendWeeklyRoutineCheck = makeSendCheck('weekly_checkins', (op) => ({ week_number: op.weekNumber, day: op.day }));
+  const sendMaturityCheck = makeSendCheck('maturity_checkins', (op) => ({ question_id: op.questionId, checkpoint: op.checkpoint }));
 
   async function loadStaticData() {
     const [roadmapRes, capabilitiesRes, weeklyRoutineRes, maturityRes] = await Promise.all([
@@ -206,7 +210,12 @@
     if (checkbox) {
       checkbox.addEventListener('change', (e) => {
         const k = e.target.dataset.weeklyKey;
-        if (e.target.checked) weeklyChecked.add(k); else weeklyChecked.delete(k);
+        const checked = e.target.checked;
+        const [weekNumber, day] = k.split('-');
+        if (checked) weeklyChecked.add(k); else weeklyChecked.delete(k);
+        localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
+        weeklyQueue.enqueue({ table: 'weekly_checkins', weekNumber: Number(weekNumber), day, checked });
+        weeklyQueue.flush(sendWeeklyRoutineCheck);
         renderTodayTab(container, weeklyRoutineItems, weeklyChecked);
       });
     }
@@ -248,7 +257,14 @@
     container.querySelectorAll('[data-maturity-key]').forEach((el) => {
       el.addEventListener('change', (e) => {
         const k = e.target.dataset.maturityKey;
-        if (e.target.checked) maturityChecked.add(k); else maturityChecked.delete(k);
+        const checked = e.target.checked;
+        const dashIndex = k.lastIndexOf('-');
+        const questionId = k.slice(0, dashIndex);
+        const cp = Number(k.slice(dashIndex + 1));
+        if (checked) maturityChecked.add(k); else maturityChecked.delete(k);
+        localStorage.setItem('gcp-ce-roadmap:maturityChecked', JSON.stringify([...maturityChecked]));
+        maturityQueue.enqueue({ table: 'maturity_checkins', questionId, checkpoint: cp, checked });
+        maturityQueue.flush(sendMaturityCheck);
         renderReportTab(container, maturityItems, maturityChecked, checkpoint);
       });
     });
@@ -290,12 +306,16 @@
     try {
       roadmapChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:roadmapChecked') || '[]'));
       capabilityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:capabilityChecked') || '[]'));
+      weeklyChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:weeklyChecked') || '[]'));
+      maturityChecked = new Set(JSON.parse(localStorage.getItem('gcp-ce-roadmap:maturityChecked') || '[]'));
     } catch (e) { /* localStorage 비어있거나 손상 — 빈 Set으로 시작 */ }
     renderTab(currentTabFromHash());
     try {
       await loadProgress();
       localStorage.setItem('gcp-ce-roadmap:roadmapChecked', JSON.stringify([...roadmapChecked]));
       localStorage.setItem('gcp-ce-roadmap:capabilityChecked', JSON.stringify([...capabilityChecked]));
+      localStorage.setItem('gcp-ce-roadmap:weeklyChecked', JSON.stringify([...weeklyChecked]));
+      localStorage.setItem('gcp-ce-roadmap:maturityChecked', JSON.stringify([...maturityChecked]));
       renderTab(currentTabFromHash());
     } catch (e) {
       console.warn('Supabase 로드 실패 — localStorage 상태로 계속', e);
