@@ -111,7 +111,7 @@ test('flattenBizEnglish: flattens weeks into leaf items with id/weekNumber/theme
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/*.test.js`
+Run: `node --test tests/js/*.test.js`
 Expected: `data-schema.test.js` fails immediately with `Cannot find module '../../docs/data/bizEnglish.json'` (file doesn't exist yet). `roadmap-logic.test.js`'s new test fails with `RoadmapLogic.flattenBizEnglish is not a function`.
 
 - [ ] **Step 3: Create `docs/data/bizEnglish.json`**
@@ -353,7 +353,7 @@ Replace it with (adds `flattenBizEnglish` and includes it in the exported object
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/*.test.js`
+Run: `node --test tests/js/*.test.js`
 Expected: all tests pass — 34 total (28 existing as of this plan's start + 5 new `data-schema.test.js` tests + 1 new `roadmap-logic.test.js` test), `# fail 0`.
 
 - [ ] **Step 6: Commit**
@@ -747,13 +747,13 @@ Replace with (adds `bizEnglishChecked` to both the restore block and the post-lo
 
 - [ ] **Step 8: Static verification (no browser in this environment — accepted limitation)**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --check docs/app.js`
+Run: `node --check docs/app.js`
 Expected: no output (syntax valid).
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/*.test.js`
+Run: `node --test tests/js/*.test.js`
 Expected: `# fail 0` (this task doesn't add new automated tests of its own — `app.js` has no direct unit-test harness in this project, an established pre-existing condition — but must not regress the existing suite).
 
-If a browser is available, also do: `cd /home/rainny/dev-run/gcp-ce-roadmap/docs && python3 -m http.server 8765`, then at `#/today` confirm the "Biz English" section shows the correct week/day/theme/activityType and the checkbox toggles. If unavailable, note this honestly in the report as a deferred manual check (matches the pattern from Plans 1-3).
+If a browser is available, also do: `cd docs && python3 -m http.server 8765`, then at `#/today` confirm the "Biz English" section shows the correct week/day/theme/activityType and the checkbox toggles. If unavailable, note this honestly in the report as a deferred manual check (matches the pattern from Plans 1-3).
 
 - [ ] **Step 9: Commit**
 
@@ -826,7 +826,7 @@ Replace with:
 
 - [ ] **Step 2: Static verification**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --check docs/app.js`
+Run: `node --check docs/app.js`
 Expected: no output.
 
 If a browser is available: confirm `#/` shows a "Biz English" row with the correct x/60 count. If unavailable, note as deferred (same accepted pattern as before).
@@ -885,7 +885,7 @@ Replace with (adds a Biz English section, sorted by week number, showing week/da
 
 - [ ] **Step 2: Static verification**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --check docs/app.js`
+Run: `node --check docs/app.js`
 Expected: no output.
 
 If a browser is available: confirm `#/report` shows a "Biz English" remaining-items section. If unavailable, note as deferred.
@@ -905,12 +905,12 @@ git commit -m "feat: add Biz English to report tab's combined remaining-items li
 
 - [ ] **Step 1: JS 유닛테스트 전체 실행**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && node --test tests/js/*.test.js`
+Run: `node --test tests/js/*.test.js`
 Expected: all pass, `# fail 0`.
 
 - [ ] **Step 2: Python 유닛테스트 전체 실행 (회귀 확인용 — 이 plan은 Python 파일을 건드리지 않음)**
 
-Run: `cd /home/rainny/dev-run/gcp-ce-roadmap && python3 -m pytest -q`
+Run: `python3 -m pytest -q`
 Expected: all pass, same count as before this plan (26).
 
 - [ ] **Step 3 (PR/merge 후, 사용자 수행): 실기기 확인**
